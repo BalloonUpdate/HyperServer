@@ -1,0 +1,59 @@
+plugins {
+    id 'java'
+}
+
+group 'github.kasuminova'
+version '1.0.0-BETA'
+
+repositories {
+    maven {
+        url 'https://maven.aliyun.com/nexus/content/groups/public/'
+    }
+    maven {
+        url 'https://maven.aliyun.com/repository/central'
+    }
+    mavenCentral()
+}
+
+jar {
+    duplicatesStrategy = DuplicatesStrategy.EXCLUDE
+    archivesBaseName = 'HyperServer'//基本的文件名
+    archiveVersion = version //版本
+    manifest { //配置 Jar 文件的 Manifest
+        attributes (
+                "Manifest-Version": 1.0,
+                'Main-Class': 'github.kasuminova.hyperserver.HyperServer' //指定 Main 方法所在的文件
+        )
+    }
+
+    //打包依赖包
+    from {
+        (configurations.runtimeClasspath).collect {
+            it.isDirectory() ? it : zipTree(it)
+        }
+    }
+}
+
+dependencies {
+    testImplementation 'org.projectlombok:lombok:1.18.24'
+    testImplementation 'org.junit.jupiter:junit-jupiter-api:5.9.0'
+    testRuntimeOnly 'org.junit.jupiter:junit-jupiter-engine:5.9.0'
+
+    implementation 'com.alibaba.fastjson2:fastjson2:2.0.15'
+
+    implementation 'io.netty:netty-all:4.1.82.Final'
+
+    implementation 'cn.hutool:hutool-core:5.8.8'
+    implementation 'cn.hutool:hutool-system:5.8.8'
+    implementation 'cn.hutool:hutool-log:5.8.8'
+    implementation 'cn.hutool:hutool-http:5.8.8'
+}
+
+tasks.withType(JavaCompile) {
+    options.encoding = "UTF-8"
+//    options.compilerArgs += "--enable-preview"
+}
+
+test {
+    useJUnitPlatform()
+}
