@@ -1,12 +1,15 @@
 package github.kasuminova.hyperserver.remoteserver;
 
 import cn.hutool.core.util.StrUtil;
+import github.kasuminova.balloonserver.updatechecker.ApplicationVersion;
 import github.kasuminova.hyperserver.utils.RandomString;
 import github.kasuminova.messages.*;
+import github.kasuminova.messages.processor.MessageProcessor;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.SimpleChannelInboundHandler;
 
 import java.net.InetSocketAddress;
+import java.util.Arrays;
 
 import static github.kasuminova.hyperserver.HyperServer.*;
 
@@ -18,20 +21,29 @@ public class RemoteChannel extends SimpleChannelInboundHandler<AbstractMessage> 
     public void channelRead0(ChannelHandlerContext ctx, AbstractMessage msg) {
         //认证
         if (msg instanceof TokenMessage tokenMsg) {
-            if (isAuthenticated) return;
             isAuthenticated = auth(ctx, clientIP, clientID, tokenMsg);
-            connectedClientChannels.put(clientID, ctx);
+            return;
         }
 
-        if (isAuthenticated) {
-            if (msg instanceof StringMessage strMsg) {
-                logger.info("从客户端接收到消息: {}", strMsg.getMessage());
-            } else if (msg instanceof MethodMessage rMsg) {
-                MessageProcessor.processMethodMessage(ctx, rMsg);
-            } else {
-                logger.warn("从客户端接收到未知消息类型: {}", msg.getMessageType());
-            }
+        //请求信息
+        if (msg instanceof RequestMessage requestMsg) {
+            MessageProcessor.processRequestMessage(ctx, requestMsg);
+            return;
         }
+
+        //方法反射信息
+        if (msg instanceof MethodMessage methodMsg) {
+            MessageProcessor.processMethodMessage(ctx, methodMsg);
+            return;
+        }
+
+        //普通信息
+        if (msg instanceof StringMessage strMsg) {
+            logger.info("从客户端接收到消息: {}", strMsg.getMessage());
+            return;
+        }
+
+        logger.warn("从客户端接收到未知消息类型: {}", msg.getMessageType());
     }
 
     @Override
@@ -61,12 +73,28 @@ public class RemoteChannel extends SimpleChannelInboundHandler<AbstractMessage> 
         return socket.getAddress().getHostAddress();
     }
 
+    /**
+     * 认证客户端
+     *
+     * @param ctx 通道
+     * @param clientIP 客户端 IP
+     * @param clientID 客户端 ID
+     * @param tokenMsg token
+     * @return 是否认证成功
+     */
     private static boolean auth(ChannelHandlerContext ctx, String clientIP, String clientID ,TokenMessage tokenMsg) {
         logger.info("{} 正在认证... 客户端版本: {}", clientIP, tokenMsg.getClientVersion());
 
+        if (isUnSupportedVersion(tokenMsg.getClientVersion())) {
+            ctx.writeAndFlush(new ErrorMessage(StrUtil.format("不兼容的客户端版本. (支持的客户端版本: {})", Arrays.toString(supportedClientVersions))));
+            logger.info("{} 客户端不兼容, 断开连接.", clientIP);
+            ctx.close();
+            return false;
+        }
+
         if (tokenMsg.getToken().equals(CONFIG.getToken())) {
             ctx.writeAndFlush(new StringMessage(StrUtil.format("认证成功, 已分配客户端 ID: {}", clientID)));
-            logger.info("{} 认证成功.", clientIP);
+            logger.info("{} 认证成功, 已分配客户端 ID: {}", clientID, clientIP);
             return true;
         } else {
             ctx.writeAndFlush(new ErrorMessage("Token 错误."));
@@ -74,5 +102,20 @@ public class RemoteChannel extends SimpleChannelInboundHandler<AbstractMessage> 
             ctx.close();
             return false;
         }
+    }
+
+    /**
+     * 验证版本是否为不兼容的版本
+     *
+     * @param clientVersion 要验证的版本
+     */
+    private static boolean isUnSupportedVersion(ApplicationVersion clientVersion) {
+        for (ApplicationVersion supportedVersion : supportedClientVersions) {
+            if (clientVersion.toInt() == supportedVersion.toInt()) {
+                return false;
+            }
+        }
+
+        return true;
     }
 }

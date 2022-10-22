@@ -1,4 +1,4 @@
-package github.kasuminova.hyperserver.configurations;
+package github.kasuminova.balloonserver.configurations;
 
 import com.alibaba.fastjson2.annotation.JSONField;
 

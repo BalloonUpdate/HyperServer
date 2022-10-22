@@ -1,4 +1,4 @@
-package github.kasuminova.hyperserver.utils.fileobject;
+package github.kasuminova.balloonserver.utils.fileobject;
 
 import com.alibaba.fastjson2.JSONArray;
 import com.alibaba.fastjson2.JSONObject;

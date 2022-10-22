@@ -1,6 +1,6 @@
 package github.kasuminova.messages;
 
-import github.kasuminova.hyperserver.utils.fileobject.AbstractSimpleFileObject;
+import github.kasuminova.balloonserver.utils.fileobject.AbstractSimpleFileObject;
 
 public class FileListMessage extends AbstractMessage {
     AbstractSimpleFileObject[] fileObjects;

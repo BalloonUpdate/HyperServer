@@ -2,10 +2,10 @@ package github.kasuminova.hyperserver;
 
 import cn.hutool.log.Log;
 import cn.hutool.system.SystemUtil;
-import github.kasuminova.hyperserver.configurations.ConfigurationManager;
-import github.kasuminova.hyperserver.configurations.HyperServerConfig;
+import github.kasuminova.balloonserver.configurations.ConfigurationManager;
+import github.kasuminova.balloonserver.configurations.HyperServerConfig;
 import github.kasuminova.hyperserver.remoteserver.RemoteServer;
-import github.kasuminova.hyperserver.updatechecker.ApplicationVersion;
+import github.kasuminova.balloonserver.updatechecker.ApplicationVersion;
 import github.kasuminova.hyperserver.utils.RandomString;
 import github.kasuminova.messages.StatusMessage;
 import io.netty.channel.ChannelHandlerContext;
@@ -18,6 +18,9 @@ public class HyperServer {
     public static final Log logger = Log.get("main");
     public static final Timer GLOBAL_QUERY_TIMER = new Timer(false);
     public static final HyperServerConfig CONFIG = new HyperServerConfig();
+    public static final ApplicationVersion[] supportedClientVersions = new ApplicationVersion[]{
+            new ApplicationVersion("1.4.0-BETA")
+    };
 
     //已连接的客户端, key 值为 clientID
     public static final Map<String, ChannelHandlerContext> connectedClientChannels = new HashMap<>();

@@ -1,8 +1,12 @@
-package github.kasuminova.messages;
+package github.kasuminova.messages.processor;
 
 import cn.hutool.core.util.StrUtil;
 import github.kasuminova.hyperserver.HyperServer;
+import github.kasuminova.hyperserver.remoteserver.Methods;
 import github.kasuminova.hyperserver.utils.MiscUtils;
+import github.kasuminova.messages.ErrorMessage;
+import github.kasuminova.messages.MethodMessage;
+import github.kasuminova.messages.RequestMessage;
 import io.netty.channel.ChannelHandlerContext;
 
 import java.lang.reflect.Method;
@@ -37,6 +41,21 @@ public class MessageProcessor {
                             message.getMethodName()),
                     MiscUtils.stackTraceToString(e)
             ));
+        }
+    }
+
+    /**
+     * 处理 RequestMessage 内容
+     * @param ctx 如果请求有返回值或出现问题, 则使用此通道发送消息
+     * @param message 消息
+     */
+    public static void processRequestMessage(ChannelHandlerContext ctx, RequestMessage message) {
+        String requestType = message.getRequestType();
+
+        switch (requestType) {
+            case "GetFileList" -> Methods.sendFileList(ctx, message.getRequestParams().get(0));
+            case "MemoryGC" -> System.gc();
+            case "UpdateIntegratedServerConfig" -> Methods.updateIntegratedServerConfig(ctx, message.getRequestParams().get(0));
         }
     }
 }

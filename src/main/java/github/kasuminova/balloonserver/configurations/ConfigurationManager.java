@@ -1,4 +1,4 @@
-package github.kasuminova.hyperserver.configurations;
+package github.kasuminova.balloonserver.configurations;
 
 import cn.hutool.core.io.IORuntimeException;
 import com.alibaba.fastjson2.JSON;

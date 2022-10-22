@@ -1,37 +1,23 @@
 package github.kasuminova.hyperserver.remoteserver;
 
-import github.kasuminova.hyperserver.HyperServer;
-import github.kasuminova.messages.fileobject.AbstractLiteFileObject;
-import github.kasuminova.messages.fileobject.LiteDirectoryObject;
-import github.kasuminova.messages.fileobject.LiteFileObject;
+import com.alibaba.fastjson2.JSON;
+import github.kasuminova.balloonserver.utils.fileobject.AbstractSimpleFileObject;
+import github.kasuminova.balloonserver.utils.fileobject.SimpleDirectoryObject;
+import github.kasuminova.balloonserver.utils.fileobject.SimpleFileObject;
+import github.kasuminova.balloonserver.configurations.IntegratedServerConfig;
+import github.kasuminova.messages.StringMessage;
 import io.netty.channel.ChannelHandlerContext;
 
 import java.io.File;
 import java.util.ArrayList;
 
 public class Methods {
-    public static void sendFileList(String[] params) {
-        if (params == null || params.length != 2) {
-            return;
-        }
-
-        String clientIP = params[0];
-        String path = params[1];
-
-        ChannelHandlerContext ctx = HyperServer.connectedClientChannels.get(clientIP);
-
-        if (path == null || path.isEmpty()) {
-            if (ctx != null) {
-                ctx.writeAndFlush(new LiteDirectoryObject("null", new ArrayList<>()));
-            }
-            return;
-        }
-
+    public static void sendFileList(ChannelHandlerContext ctx, String path) {
         File dir = new File(path);
 
         if (!dir.exists()) {
             if (ctx != null) {
-                ctx.writeAndFlush(new LiteDirectoryObject(dir.getName(), new ArrayList<>()));
+                ctx.writeAndFlush(new SimpleDirectoryObject(dir.getName(), new ArrayList<>()));
             }
             return;
         }
@@ -40,41 +26,47 @@ public class Methods {
 
         if (files == null) {
             if (ctx != null) {
-                ctx.writeAndFlush(new LiteDirectoryObject(dir.getName(), new ArrayList<>()));
+                ctx.writeAndFlush(new SimpleDirectoryObject(dir.getName(), new ArrayList<>()));
             }
             return;
         }
 
-        ArrayList<AbstractLiteFileObject> fileObjectList = new ArrayList<>();
-        ArrayList<AbstractLiteFileObject> directoryObjectList = new ArrayList<>();
+        ArrayList<AbstractSimpleFileObject> fileObjectList = new ArrayList<>();
+        ArrayList<AbstractSimpleFileObject> directoryObjectList = new ArrayList<>();
 
         for (File file : files) {
             if (file.isFile()) {
-                fileObjectList.add(new LiteFileObject(file.getName(), file.length(), file.lastModified()));
+                fileObjectList.add(new SimpleFileObject(file.getName(), file.length(), "", file.lastModified()));
             } else {
                 directoryObjectList.add(
-                        new LiteDirectoryObject(file.getName(), getDirectoryObjectList(path + "/" + file.getName())));
+                        new SimpleDirectoryObject(file.getName(), getDirectoryObjectList(path + "/" + file.getName())));
             }
         }
 
         directoryObjectList.addAll(fileObjectList);
 
         if (ctx != null) {
-            ctx.writeAndFlush(new LiteDirectoryObject(dir.getName(), directoryObjectList));
+            ctx.writeAndFlush(new SimpleDirectoryObject(dir.getName(), directoryObjectList));
         }
     }
 
-    private static ArrayList<AbstractLiteFileObject> getDirectoryObjectList(String path) {
+    public static void updateIntegratedServerConfig(ChannelHandlerContext ctx, String configJson) {
+        IntegratedServerConfig config = JSON.parseObject(configJson, IntegratedServerConfig.class);
+
+        ctx.writeAndFlush(new StringMessage("已更新远程服务器配置文件."));
+    }
+
+    private static ArrayList<AbstractSimpleFileObject> getDirectoryObjectList(String path) {
         File dir = new File(path);
-        ArrayList<AbstractLiteFileObject> fileObjectList = new ArrayList<>();
+        ArrayList<AbstractSimpleFileObject> fileObjectList = new ArrayList<>();
         if (dir.exists()) {
             File[] files = dir.listFiles();
             if (files != null) {
                 for (File file : files) {
                     if (file.isFile()) {
-                        fileObjectList.add(new LiteFileObject(file.getName(), file.length(), file.lastModified()));
+                        fileObjectList.add(new SimpleFileObject(file.getName(), file.length(), "", file.lastModified()));
                     } else {
-                        fileObjectList.add(new LiteDirectoryObject(file.getName(), new ArrayList<>()));
+                        fileObjectList.add(new SimpleDirectoryObject(file.getName(), new ArrayList<>()));
                     }
                 }
             }
