@@ -6,6 +6,7 @@ import github.kasuminova.hyperserver.configurations.ConfigurationManager;
 import github.kasuminova.hyperserver.configurations.HyperServerConfig;
 import github.kasuminova.hyperserver.remoteserver.RemoteServer;
 import github.kasuminova.hyperserver.updatechecker.ApplicationVersion;
+import github.kasuminova.hyperserver.utils.RandomString;
 import github.kasuminova.messages.StatusMessage;
 import io.netty.channel.ChannelHandlerContext;
 
@@ -17,6 +18,8 @@ public class HyperServer {
     public static final Log logger = Log.get("main");
     public static final Timer GLOBAL_QUERY_TIMER = new Timer(false);
     public static final HyperServerConfig CONFIG = new HyperServerConfig();
+
+    //已连接的客户端, key 值为 clientID
     public static final Map<String, ChannelHandlerContext> connectedClientChannels = new HashMap<>();
 
     public static void main(String[] args) {
@@ -34,12 +37,12 @@ public class HyperServer {
                 long memoryTotal = SystemUtil.getTotalMemory();
                 long memoryMax = SystemUtil.getMaxMemory();
 
-                connectedClientChannels.forEach((clientIP, ctx) -> ctx.writeAndFlush(new StatusMessage(
+                connectedClientChannels.forEach((clientID, ctx) -> ctx.writeAndFlush(new StatusMessage(
                         (int) ((memoryTotal - memoryFree) / (1024 * 1024)),
                         (int) (memoryTotal / (1024 * 1024)),
                         (int) (memoryMax / (1024 * 1024)),
                         Thread.activeCount(),
-                        clientIP)));
+                        clientID)));
             }
         }, 0, 1000);
     }
@@ -53,16 +56,9 @@ public class HyperServer {
             } else {
                 logger.info("远控服务端文件不存在, 正在创建文件...");
 
-                char[] str = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789".toCharArray();
-                Random random = new Random();
-                StringBuilder sb = new StringBuilder();
-                for (int i = 0; i < 32; i++) {
-                    int randomIndex = random.nextInt(str.length);
-                    sb.append(str[randomIndex]);
-                }
-
-                logger.info("已生成随机 token: {}", sb);
-                CONFIG.setToken(sb.toString());
+                String token = RandomString.nextString(32);
+                logger.info("已生成随机 token: {}", token);
+                CONFIG.setToken(token);
 
                 ConfigurationManager.saveConfigurationToFile(CONFIG, "./", "hyperserver");
                 logger.info("成功生成远控服务端配置文件.");

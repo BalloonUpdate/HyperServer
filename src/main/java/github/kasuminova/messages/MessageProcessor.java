@@ -7,13 +7,13 @@ import io.netty.channel.ChannelHandlerContext;
 
 import java.lang.reflect.Method;
 
-public class MethodMessageProcessor {
+public class MessageProcessor {
     /**
      * 执行消息中的方法
      * @param ctx 如果出现错误, 向客户端发送消息
      * @param message 消息
      */
-    public static void process(ChannelHandlerContext ctx, MethodMessage message) {
+    public static void processMethodMessage(ChannelHandlerContext ctx, MethodMessage message) {
         try {
             //包名 + 类名
             Class<?> classZZ = Class.forName(message.getClassName());
@@ -33,8 +33,8 @@ public class MethodMessageProcessor {
         } catch (Exception e) {
             ctx.writeAndFlush(new ErrorMessage(
                     StrUtil.format("执行目标函数的时候出现了问题 {}.{}",
-                    message.getClassName(),
-                    message.getMethodName()),
+                            message.getClassName(),
+                            message.getMethodName()),
                     MiscUtils.stackTraceToString(e)
             ));
         }
