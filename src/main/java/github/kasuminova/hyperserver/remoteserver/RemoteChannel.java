@@ -13,12 +13,12 @@ import java.util.Arrays;
 
 import static github.kasuminova.hyperserver.HyperServer.*;
 
-public class RemoteChannel extends SimpleChannelInboundHandler<AbstractMessage> {
+public class RemoteChannel extends SimpleChannelInboundHandler<Object> {
     boolean isAuthenticated = false;
     String clientIP;
     String clientID;
     @Override
-    public void channelRead0(ChannelHandlerContext ctx, AbstractMessage msg) {
+    public void channelRead0(ChannelHandlerContext ctx, Object msg) {
         //认证
         if (msg instanceof TokenMessage tokenMsg) {
             isAuthenticated = auth(ctx, clientIP, clientID, tokenMsg);
@@ -43,7 +43,7 @@ public class RemoteChannel extends SimpleChannelInboundHandler<AbstractMessage> 
             return;
         }
 
-        logger.warn("从客户端接收到未知消息类型: {}", msg.getMessageType());
+        logger.warn("从客户端接收到未知消息: {}", msg.toString());
     }
 
     @Override

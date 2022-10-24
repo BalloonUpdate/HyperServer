@@ -1,7 +1,7 @@
 package github.kasuminova.messages;
 
 public class StringMessage extends AbstractMessage {
-    String message;
+    private String message;
 
     public StringMessage() {
         this.messageType = "StringMessage";

@@ -22,11 +22,11 @@ public class RemoteServer {
         boss = new NioEventLoopGroup();
         work = new NioEventLoopGroup();
 
-        RemoteServerInitializer httpServerInitializer = new RemoteServerInitializer();
+        RemoteServerInitializer remoteServerInitializer = new RemoteServerInitializer();
         bootstrap.group(boss, work)
                 .handler(new LoggingHandler(LogLevel.INFO))
                 .channel(NioServerSocketChannel.class)
-                .childHandler(httpServerInitializer);
+                .childHandler(remoteServerInitializer);
 
         try {
             future = bootstrap.bind(new InetSocketAddress("0.0.0.0", 10000)).sync();

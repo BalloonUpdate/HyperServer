@@ -1,8 +1,8 @@
 package github.kasuminova.messages;
 
 public class ErrorMessage extends AbstractMessage {
-    String message;
-    String stackTrace;
+    private String message;
+    private String stackTrace;
 
     public ErrorMessage(String message) {
         this(message, "");

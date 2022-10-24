@@ -7,7 +7,15 @@ import java.util.List;
  * 请求信息
  */
 public class RequestMessage extends AbstractMessage {
+    /**
+     * 消息类型
+     */
     private String requestType;
+
+    /**
+     * 消息参数
+     */
+    private List<String> requestParams;
 
     /**
      * 新建一个请求信息
@@ -22,8 +30,6 @@ public class RequestMessage extends AbstractMessage {
     public RequestMessage(String requestType) {
         this(requestType, new ArrayList<>());
     }
-
-    public List<String> requestParams;
 
     public List<String> getRequestParams() {
         return requestParams;
