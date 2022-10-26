@@ -41,7 +41,7 @@ dependencies {
 
     implementation 'com.alibaba.fastjson2:fastjson2:2.0.15'
 
-    implementation 'io.netty:netty-all:4.1.82.Final'
+    implementation 'io.netty:netty-all:4.1.84.Final'
 
     implementation 'cn.hutool:hutool-core:5.8.8'
     implementation 'cn.hutool:hutool-system:5.8.8'

@@ -16,38 +16,18 @@ public class Methods {
         File dir = new File(path);
 
         if (!dir.exists()) {
-            if (ctx != null) {
-                ctx.writeAndFlush(new SimpleDirectoryObject(dir.getName(), new ArrayList<>()));
-            }
+            ctx.writeAndFlush(new SimpleDirectoryObject(dir.getName(), new ArrayList<>()));
             return;
         }
 
         File[] files = dir.listFiles();
 
         if (files == null) {
-            if (ctx != null) {
-                ctx.writeAndFlush(new SimpleDirectoryObject(dir.getName(), new ArrayList<>()));
-            }
+            ctx.writeAndFlush(new SimpleDirectoryObject(dir.getName(), new ArrayList<>()));
             return;
         }
 
-        ArrayList<AbstractSimpleFileObject> fileObjectList = new ArrayList<>();
-        ArrayList<AbstractSimpleFileObject> directoryObjectList = new ArrayList<>();
-
-        for (File file : files) {
-            if (file.isFile()) {
-                fileObjectList.add(new SimpleFileObject(file.getName(), file.length(), "", file.lastModified()));
-            } else {
-                directoryObjectList.add(
-                        new SimpleDirectoryObject(file.getName(), getDirectoryObjectList(path + "/" + file.getName())));
-            }
-        }
-
-        directoryObjectList.addAll(fileObjectList);
-
-        if (ctx != null) {
-            ctx.writeAndFlush(new SimpleDirectoryObject(dir.getName(), directoryObjectList));
-        }
+        ctx.writeAndFlush(new SimpleDirectoryObject(dir.getName(), getDirectoryObjectList(path)));
     }
 
     public static void updateIntegratedServerConfig(ChannelHandlerContext ctx, String configJson) {
@@ -59,6 +39,7 @@ public class Methods {
     private static ArrayList<AbstractSimpleFileObject> getDirectoryObjectList(String path) {
         File dir = new File(path);
         ArrayList<AbstractSimpleFileObject> fileObjectList = new ArrayList<>();
+        ArrayList<AbstractSimpleFileObject> directoryObjectList = new ArrayList<>();
         if (dir.exists()) {
             File[] files = dir.listFiles();
             if (files != null) {
@@ -66,12 +47,14 @@ public class Methods {
                     if (file.isFile()) {
                         fileObjectList.add(new SimpleFileObject(file.getName(), file.length(), "", file.lastModified()));
                     } else {
-                        fileObjectList.add(new SimpleDirectoryObject(file.getName(), new ArrayList<>()));
+                        directoryObjectList.add(new SimpleDirectoryObject(file.getName(), getDirectoryObjectList(path + "/" + file.getName())));
                     }
                 }
             }
         }
 
-        return fileObjectList;
+        directoryObjectList.addAll(fileObjectList);
+
+        return directoryObjectList;
     }
 }

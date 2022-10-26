@@ -53,9 +53,13 @@ public class MessageProcessor {
         String requestType = message.getRequestType();
 
         switch (requestType) {
-            case "GetFileList" -> Methods.sendFileList(ctx, message.getRequestParams().get(0));
+            case "GetFileList" -> Methods.sendFileList(
+                    ctx, message.getRequestParams().get(0));
+
             case "MemoryGC" -> System.gc();
-            case "UpdateIntegratedServerConfig" -> Methods.updateIntegratedServerConfig(ctx, message.getRequestParams().get(0));
+
+            case "UpdateIntegratedServerConfig" -> Methods.updateIntegratedServerConfig(
+                    ctx, message.getRequestParams().get(0));
         }
     }
 }

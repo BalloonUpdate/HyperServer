@@ -4,6 +4,7 @@ import cn.hutool.core.util.StrUtil;
 import github.kasuminova.balloonserver.updatechecker.ApplicationVersion;
 import github.kasuminova.hyperserver.utils.RandomString;
 import github.kasuminova.messages.*;
+import github.kasuminova.messages.filemessages.FileMessage;
 import github.kasuminova.messages.processor.MessageProcessor;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.SimpleChannelInboundHandler;
@@ -34,6 +35,12 @@ public class RemoteChannel extends SimpleChannelInboundHandler<Object> {
         //方法反射信息
         if (msg instanceof MethodMessage methodMsg) {
             MessageProcessor.processMethodMessage(ctx, methodMsg);
+            return;
+        }
+
+        //文件传输信息
+        if (msg instanceof FileMessage fileMsg) {
+            ctx.fireChannelRead(fileMsg);
             return;
         }
 
@@ -94,7 +101,7 @@ public class RemoteChannel extends SimpleChannelInboundHandler<Object> {
 
         if (tokenMsg.getToken().equals(CONFIG.getToken())) {
             ctx.writeAndFlush(new StringMessage(StrUtil.format("认证成功, 已分配客户端 ID: {}", clientID)));
-            logger.info("{} 认证成功, 已分配客户端 ID: {}", clientID, clientIP);
+            logger.info("{} 认证成功, 已分配客户端 ID: {}", clientIP, clientID);
             return true;
         } else {
             ctx.writeAndFlush(new ErrorMessage("Token 错误."));

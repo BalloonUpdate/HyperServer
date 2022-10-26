@@ -13,7 +13,8 @@ public class RemoteServerInitializer extends ChannelInitializer<SocketChannel> {
         ChannelPipeline pipeline = ch.pipeline();
 
         pipeline.addLast(new ObjectEncoder());//编码器
-        pipeline.addLast(new ObjectDecoder(ClassResolvers.weakCachingResolver(Object.class.getClassLoader())));//解码器
+        pipeline.addLast(new ObjectDecoder(Integer.MAX_VALUE, ClassResolvers.weakCachingResolver(null)));//解码器
         pipeline.addLast(new RemoteChannel());
+        pipeline.addLast(new RemoteFileChannel());
     }
 }
