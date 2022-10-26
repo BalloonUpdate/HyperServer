@@ -29,6 +29,8 @@ public class RemoteFileChannel extends SimpleChannelInboundHandler<FileMessage> 
             } catch (IOException e) {
                 ctx.writeAndFlush(new ErrorMessage("", MiscUtils.stackTraceToString(e)));
             }
+        } else {
+            ctx.fireChannelRead(msg);
         }
     }
 

@@ -4,7 +4,6 @@ import cn.hutool.core.util.StrUtil;
 import github.kasuminova.balloonserver.updatechecker.ApplicationVersion;
 import github.kasuminova.hyperserver.utils.RandomString;
 import github.kasuminova.messages.*;
-import github.kasuminova.messages.filemessages.FileMessage;
 import github.kasuminova.messages.processor.MessageProcessor;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.SimpleChannelInboundHandler;
@@ -38,19 +37,13 @@ public class RemoteChannel extends SimpleChannelInboundHandler<Object> {
             return;
         }
 
-        //文件传输信息
-        if (msg instanceof FileMessage fileMsg) {
-            ctx.fireChannelRead(fileMsg);
-            return;
-        }
-
         //普通信息
         if (msg instanceof StringMessage strMsg) {
             logger.info("从客户端接收到消息: {}", strMsg.getMessage());
             return;
         }
 
-        logger.warn("从客户端接收到未知消息: {}", msg.toString());
+        ctx.fireChannelRead(msg);
     }
 
     @Override
@@ -99,8 +92,9 @@ public class RemoteChannel extends SimpleChannelInboundHandler<Object> {
             return false;
         }
 
-        if (tokenMsg.getToken().equals(CONFIG.getToken())) {
+        if (tokenMsg.getToken().equals(HYPERSERVER_CONFIG.getToken())) {
             ctx.writeAndFlush(new StringMessage(StrUtil.format("认证成功, 已分配客户端 ID: {}", clientID)));
+            ctx.writeAndFlush(new AuthSuccessMessage(clientID, HTTPSERVER_CONFIG));
             logger.info("{} 认证成功, 已分配客户端 ID: {}", clientIP, clientID);
             return true;
         } else {
