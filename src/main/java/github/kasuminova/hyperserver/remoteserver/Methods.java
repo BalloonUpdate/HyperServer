@@ -5,7 +5,8 @@ import github.kasuminova.balloonserver.utils.fileobject.AbstractSimpleFileObject
 import github.kasuminova.balloonserver.utils.fileobject.SimpleDirectoryObject;
 import github.kasuminova.balloonserver.utils.fileobject.SimpleFileObject;
 import github.kasuminova.balloonserver.configurations.IntegratedServerConfig;
-import github.kasuminova.messages.StringMessage;
+import github.kasuminova.hyperserver.utils.NetworkLogger;
+import github.kasuminova.messages.LogMessage;
 import io.netty.channel.ChannelHandlerContext;
 
 import java.io.File;
@@ -33,7 +34,7 @@ public class Methods {
     public static void updateIntegratedServerConfig(ChannelHandlerContext ctx, String configJson) {
         IntegratedServerConfig config = JSON.parseObject(configJson, IntegratedServerConfig.class);
 
-        ctx.writeAndFlush(new StringMessage("已更新远程服务器配置文件."));
+        ctx.writeAndFlush(new LogMessage(NetworkLogger.INFO, "已更新远程服务器配置文件."));
     }
 
     private static ArrayList<AbstractSimpleFileObject> getDirectoryObjectList(String path) {

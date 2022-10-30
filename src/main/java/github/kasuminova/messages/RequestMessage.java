@@ -24,7 +24,7 @@ public class RequestMessage extends AbstractMessage {
     public RequestMessage(String requestType, List<String> requestParams) {
         this.requestType = requestType;
         this.requestParams = requestParams;
-        this.messageType = "ErrorMessage";
+        this.messageType = RequestMessage.class.getName();
     }
 
     public RequestMessage(String requestType) {

@@ -4,7 +4,8 @@ import cn.hutool.core.util.StrUtil;
 import github.kasuminova.hyperserver.HyperServer;
 import github.kasuminova.hyperserver.remoteserver.Methods;
 import github.kasuminova.hyperserver.utils.MiscUtils;
-import github.kasuminova.messages.ErrorMessage;
+import github.kasuminova.hyperserver.utils.NetworkLogger;
+import github.kasuminova.messages.LogMessage;
 import github.kasuminova.messages.MethodMessage;
 import github.kasuminova.messages.RequestMessage;
 import io.netty.channel.ChannelHandlerContext;
@@ -35,11 +36,11 @@ public class MessageProcessor {
 
             HyperServer.logger.debug("已执行操作: {}.{}", message.getClassName(), message.getMethodName());
         } catch (Exception e) {
-            ctx.writeAndFlush(new ErrorMessage(
-                    StrUtil.format("执行目标函数的时候出现了问题 {}.{}",
+            ctx.writeAndFlush(new LogMessage(NetworkLogger.ERROR,
+                    StrUtil.format("执行函数 {}.{} 的时候出现了问题:\n{}",
                             message.getClassName(),
-                            message.getMethodName()),
-                    MiscUtils.stackTraceToString(e)
+                            message.getMethodName(),
+                            MiscUtils.stackTraceToString(e))
             ));
         }
     }

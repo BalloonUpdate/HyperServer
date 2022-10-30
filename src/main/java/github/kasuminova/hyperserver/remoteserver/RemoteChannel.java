@@ -2,6 +2,7 @@ package github.kasuminova.hyperserver.remoteserver;
 
 import cn.hutool.core.util.StrUtil;
 import github.kasuminova.balloonserver.updatechecker.ApplicationVersion;
+import github.kasuminova.hyperserver.utils.NetworkLogger;
 import github.kasuminova.hyperserver.utils.RandomString;
 import github.kasuminova.messages.*;
 import github.kasuminova.messages.processor.MessageProcessor;
@@ -38,7 +39,7 @@ public class RemoteChannel extends SimpleChannelInboundHandler<Object> {
         }
 
         //普通信息
-        if (msg instanceof StringMessage strMsg) {
+        if (msg instanceof LogMessage strMsg) {
             logger.info("从客户端接收到消息: {}", strMsg.getMessage());
             return;
         }
@@ -86,19 +87,19 @@ public class RemoteChannel extends SimpleChannelInboundHandler<Object> {
         logger.info("{} 正在认证... 客户端版本: {}", clientIP, tokenMsg.getClientVersion());
 
         if (isUnSupportedVersion(tokenMsg.getClientVersion())) {
-            ctx.writeAndFlush(new ErrorMessage(StrUtil.format("不兼容的客户端版本. (支持的客户端版本: {})", Arrays.toString(supportedClientVersions))));
+            ctx.writeAndFlush(new LogMessage(NetworkLogger.ERROR, StrUtil.format("不兼容的客户端版本. (支持的客户端版本: {})", Arrays.toString(supportedClientVersions))));
             logger.info("{} 客户端不兼容, 断开连接.", clientIP);
             ctx.close();
             return false;
         }
 
         if (tokenMsg.getToken().equals(HYPERSERVER_CONFIG.getToken())) {
-            ctx.writeAndFlush(new StringMessage(StrUtil.format("认证成功, 已分配客户端 ID: {}", clientID)));
+            ctx.writeAndFlush(new LogMessage(NetworkLogger.INFO, StrUtil.format("认证成功, 已分配客户端 ID: {}", clientID)));
             ctx.writeAndFlush(new AuthSuccessMessage(clientID, HTTPSERVER_CONFIG));
             logger.info("{} 认证成功, 已分配客户端 ID: {}", clientIP, clientID);
             return true;
         } else {
-            ctx.writeAndFlush(new ErrorMessage("Token 错误."));
+            ctx.writeAndFlush(new LogMessage(NetworkLogger.ERROR, "Token 错误."));
             logger.info("{} 认证错误, 断开连接.", clientIP);
             ctx.close();
             return false;

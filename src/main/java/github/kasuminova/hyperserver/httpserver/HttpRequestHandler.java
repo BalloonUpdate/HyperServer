@@ -14,29 +14,25 @@ import java.nio.charset.StandardCharsets;
 import static github.kasuminova.hyperserver.HyperServer.logger;
 import static github.kasuminova.hyperserver.utils.MiscUtils.formatTime;
 
-public final class HttpRequestHandler extends SimpleChannelInboundHandler<Object> {
+public final class HttpRequestHandler extends SimpleChannelInboundHandler<FullHttpRequest> {
     @Override
-    protected void channelRead0(ChannelHandlerContext ctx, Object msg) {
-        if (msg instanceof FullHttpRequest req) {
-            final String uri = req.uri();
-            long start = System.currentTimeMillis();
+    protected void channelRead0(ChannelHandlerContext ctx, FullHttpRequest req) {
+        final String uri = req.uri();
+        long start = System.currentTimeMillis();
 
-            String clientIP = getClientIP(ctx, req);
-            //转义后的 URI
-            String decodedURI = URLDecoder.decode(uri, StandardCharsets.UTF_8);
+        String clientIP = getClientIP(ctx, req);
+        //转义后的 URI
+        String decodedURI = URLDecoder.decode(uri, StandardCharsets.UTF_8);
 
-            FullHttpResponse response = new DefaultFullHttpResponse(
-                    HttpVersion.HTTP_1_1,
-                    HttpResponseStatus.OK,
-                    Unpooled.copiedBuffer("Hello World!", StandardCharsets.UTF_8));
-            response.headers().set(HttpHeaderNames.CONTENT_TYPE, HttpHeaderValues.TEXT_PLAIN);
+        FullHttpResponse response = new DefaultFullHttpResponse(
+                HttpVersion.HTTP_1_1,
+                HttpResponseStatus.OK,
+                Unpooled.copiedBuffer("Hello World!", StandardCharsets.UTF_8));
+        response.headers().set(HttpHeaderNames.CONTENT_TYPE, HttpHeaderValues.TEXT_PLAIN);
 
-            ctx.writeAndFlush(response).addListener(ChannelFutureListener.CLOSE);
+        ctx.writeAndFlush(response).addListener(ChannelFutureListener.CLOSE);
 
-            printSuccessLog(System.currentTimeMillis() - start, "200", clientIP, decodedURI);
-        } else {
-            ctx.fireChannelRead(msg);
-        }
+        printSuccessLog(System.currentTimeMillis() - start, "200", clientIP, decodedURI);
     }
 
     /**
