@@ -29,8 +29,8 @@ public class RemoteServer {
                 .childHandler(remoteServerInitializer);
 
         try {
-            future = bootstrap.bind(new InetSocketAddress("0.0.0.0", 10000)).sync();
-            logger.info("远控服务端已启动. IP: 0.0.0.0 端口: 10000");
+            future = bootstrap.bind(new InetSocketAddress("0.0.0.0", 20000)).sync();
+            logger.info("远控服务端已启动. IP: 0.0.0.0 端口: 20000");
         } catch (InterruptedException e) {
             logger.error(e);
             return false;

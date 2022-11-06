@@ -12,6 +12,7 @@ import io.netty.channel.ChannelHandlerContext;
 import java.io.File;
 import java.util.ArrayList;
 
+@Deprecated
 public class Methods {
     public static void sendFileList(ChannelHandlerContext ctx, String path) {
         File dir = new File(path);

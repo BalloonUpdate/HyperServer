@@ -1,5 +1,6 @@
 package github.kasuminova.messages;
 
+@Deprecated
 public class MethodMessage extends AbstractMessage {
     private String className;
     private String methodName;
@@ -13,7 +14,6 @@ public class MethodMessage extends AbstractMessage {
         this.className = className;
         this.methodName = methodName;
         this.params = methods;
-        messageType = MethodMessage.class.getName();
     }
 
     public String getMethodName() {

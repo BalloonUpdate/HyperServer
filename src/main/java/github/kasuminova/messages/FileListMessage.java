@@ -3,7 +3,7 @@ package github.kasuminova.messages;
 import github.kasuminova.balloonserver.utils.fileobject.AbstractSimpleFileObject;
 
 public class FileListMessage extends AbstractMessage {
-    private AbstractSimpleFileObject[] fileObjects;
+    AbstractSimpleFileObject[] fileObjects;
 
     public FileListMessage(AbstractSimpleFileObject[] fileObjects) {
         this.fileObjects = fileObjects;

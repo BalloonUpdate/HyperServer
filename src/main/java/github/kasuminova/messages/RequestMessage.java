@@ -24,11 +24,10 @@ public class RequestMessage extends AbstractMessage {
     public RequestMessage(String requestType, List<String> requestParams) {
         this.requestType = requestType;
         this.requestParams = requestParams;
-        this.messageType = RequestMessage.class.getName();
     }
 
     public RequestMessage(String requestType) {
-        this(requestType, new ArrayList<>());
+        this(requestType, new ArrayList<>(1));
     }
 
     public List<String> getRequestParams() {

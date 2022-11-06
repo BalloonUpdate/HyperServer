@@ -12,7 +12,8 @@ import io.netty.channel.ChannelHandlerContext;
 
 import java.lang.reflect.Method;
 
-public class MessageProcessor {
+@Deprecated
+public class SimpleMessageProcessor {
     /**
      * 执行消息中的方法
      * @param ctx 如果出现错误, 向客户端发送消息

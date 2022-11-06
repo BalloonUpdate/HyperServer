@@ -1,55 +1,44 @@
 package github.kasuminova.hyperserver.remoteserver;
 
 import cn.hutool.core.util.StrUtil;
+import com.alibaba.fastjson2.JSON;
+import github.kasuminova.balloonserver.configurations.IntegratedServerConfig;
 import github.kasuminova.balloonserver.updatechecker.ApplicationVersion;
+import github.kasuminova.balloonserver.utils.fileobject.AbstractSimpleFileObject;
+import github.kasuminova.balloonserver.utils.fileobject.SimpleDirectoryObject;
+import github.kasuminova.balloonserver.utils.fileobject.SimpleFileObject;
 import github.kasuminova.hyperserver.utils.NetworkLogger;
 import github.kasuminova.hyperserver.utils.RandomString;
 import github.kasuminova.messages.*;
-import github.kasuminova.messages.processor.MessageProcessor;
 import io.netty.channel.ChannelHandlerContext;
-import io.netty.channel.SimpleChannelInboundHandler;
 
-import java.net.InetSocketAddress;
+import java.io.File;
+import java.util.ArrayList;
 import java.util.Arrays;
 
 import static github.kasuminova.hyperserver.HyperServer.*;
 
-public class RemoteChannel extends SimpleChannelInboundHandler<Object> {
+public class RemoteChannel extends AbstractRemoteChannel {
     boolean isAuthenticated = false;
-    String clientIP;
-    String clientID;
+
     @Override
-    public void channelRead0(ChannelHandlerContext ctx, Object msg) {
-        //认证
-        if (msg instanceof TokenMessage tokenMsg) {
-            isAuthenticated = auth(ctx, clientIP, clientID, tokenMsg);
-            return;
+    public boolean channelRead1(Object msg) {
+        if (msg instanceof TokenMessage tokenMessage) {
+            auth(tokenMessage);
+            return false;
         }
-
-        //请求信息
-        if (msg instanceof RequestMessage requestMsg) {
-            MessageProcessor.processRequestMessage(ctx, requestMsg);
-            return;
-        }
-
-        //方法反射信息
-        if (msg instanceof MethodMessage methodMsg) {
-            MessageProcessor.processMethodMessage(ctx, methodMsg);
-            return;
-        }
-
-        //普通信息
-        if (msg instanceof LogMessage strMsg) {
-            logger.info("从客户端接收到消息: {}", strMsg.getMessage());
-            return;
-        }
-
-        ctx.fireChannelRead(msg);
+        return isAuthenticated;
     }
 
     @Override
-    public void channelActive(ChannelHandlerContext ctx) {
-        clientIP = getClientIP(ctx);
+    public void onRegisterMessages() {
+        registerMessage(TokenMessage.class, (MessageProcessor<TokenMessage>) this::auth);
+        registerMessage(LogMessage.class, (MessageProcessor<LogMessage>) message0 -> logger.info("从客户端接收到消息: {}", message0.getMessage()));
+        registerMessage(RequestMessage.class, (MessageProcessor<RequestMessage>) message0 -> processRequestMessage(ctx, message0));
+    }
+
+    @Override
+    public void channelActive0() {
         clientID = RandomString.nextString(8);
 
         connectedClientChannels.put(clientID, ctx);
@@ -57,52 +46,46 @@ public class RemoteChannel extends SimpleChannelInboundHandler<Object> {
     }
 
     @Override
-    public void channelInactive(ChannelHandlerContext ctx) {
-        logger.info("{} 已断开连接.", getClientIP(ctx));
+    public void channelInactive0() {
+        logger.info("{} 已断开连接.", clientIP);
         connectedClientChannels.remove(clientID);
     }
 
     @Override
-    public void exceptionCaught(ChannelHandlerContext ctx, Throwable cause) {
+    public void exceptionCaught0(Throwable cause) {
         logger.warn("{} 出现问题, 正在断开连接...\n{}", clientIP, cause);
         connectedClientChannels.remove(clientID);
-        ctx.close();
-    }
-
-    public static String getClientIP(ChannelHandlerContext ctx) {
-        InetSocketAddress socket = (InetSocketAddress) ctx.channel().remoteAddress();
-        return socket.getAddress().getHostAddress();
     }
 
     /**
      * 认证客户端
      *
-     * @param ctx 通道
-     * @param clientIP 客户端 IP
-     * @param clientID 客户端 ID
      * @param tokenMsg token
-     * @return 是否认证成功
      */
-    private static boolean auth(ChannelHandlerContext ctx, String clientIP, String clientID ,TokenMessage tokenMsg) {
+    private void auth(TokenMessage tokenMsg) {
         logger.info("{} 正在认证... 客户端版本: {}", clientIP, tokenMsg.getClientVersion());
 
         if (isUnSupportedVersion(tokenMsg.getClientVersion())) {
             ctx.writeAndFlush(new LogMessage(NetworkLogger.ERROR, StrUtil.format("不兼容的客户端版本. (支持的客户端版本: {})", Arrays.toString(supportedClientVersions))));
             logger.info("{} 客户端不兼容, 断开连接.", clientIP);
             ctx.close();
-            return false;
+
+            isAuthenticated = false;
+            return;
         }
 
         if (tokenMsg.getToken().equals(HYPERSERVER_CONFIG.getToken())) {
             ctx.writeAndFlush(new LogMessage(NetworkLogger.INFO, StrUtil.format("认证成功, 已分配客户端 ID: {}", clientID)));
             ctx.writeAndFlush(new AuthSuccessMessage(clientID, HTTPSERVER_CONFIG));
             logger.info("{} 认证成功, 已分配客户端 ID: {}", clientIP, clientID);
-            return true;
+
+            isAuthenticated = true;
         } else {
             ctx.writeAndFlush(new LogMessage(NetworkLogger.ERROR, "Token 错误."));
             logger.info("{} 认证错误, 断开连接.", clientIP);
             ctx.close();
-            return false;
+
+            isAuthenticated = false;
         }
     }
 
@@ -117,7 +100,67 @@ public class RemoteChannel extends SimpleChannelInboundHandler<Object> {
                 return false;
             }
         }
-
         return true;
+    }
+
+    /**
+     * 处理 RequestMessage 内容
+     * @param ctx 如果请求有返回值或出现问题, 则使用此通道发送消息
+     * @param message 消息
+     */
+    public static void processRequestMessage(ChannelHandlerContext ctx, RequestMessage message) {
+        String requestType = message.getRequestType();
+
+        switch (requestType) {
+            case "GetFileList" -> sendFileList(ctx, message.getRequestParams().get(0));
+            case "MemoryGC" -> System.gc();
+            case "UpdateIntegratedServerConfig" -> updateIntegratedServerConfig(ctx, message.getRequestParams().get(0));
+        }
+    }
+
+    public static void sendFileList(ChannelHandlerContext ctx, String path) {
+        File dir = new File(path);
+
+        if (!dir.exists()) {
+            ctx.writeAndFlush(new SimpleDirectoryObject(dir.getName(), new ArrayList<>()));
+            return;
+        }
+
+        File[] files = dir.listFiles();
+
+        if (files == null) {
+            ctx.writeAndFlush(new SimpleDirectoryObject(dir.getName(), new ArrayList<>()));
+            return;
+        }
+
+        ctx.writeAndFlush(new SimpleDirectoryObject(dir.getName(), getDirectoryObjectList(path)));
+    }
+
+    public static void updateIntegratedServerConfig(ChannelHandlerContext ctx, String configJson) {
+        IntegratedServerConfig config = JSON.parseObject(configJson, IntegratedServerConfig.class);
+
+        ctx.writeAndFlush(new LogMessage(NetworkLogger.INFO, "已更新远程服务器配置文件."));
+    }
+
+    private static ArrayList<AbstractSimpleFileObject> getDirectoryObjectList(String path) {
+        File dir = new File(path);
+        ArrayList<AbstractSimpleFileObject> fileObjectList = new ArrayList<>();
+        ArrayList<AbstractSimpleFileObject> directoryObjectList = new ArrayList<>();
+        if (dir.exists()) {
+            File[] files = dir.listFiles();
+            if (files != null) {
+                for (File file : files) {
+                    if (file.isFile()) {
+                        fileObjectList.add(new SimpleFileObject(file.getName(), file.length(), "", file.lastModified()));
+                    } else {
+                        directoryObjectList.add(new SimpleDirectoryObject(file.getName(), getDirectoryObjectList(path + "/" + file.getName())));
+                    }
+                }
+            }
+        }
+
+        directoryObjectList.addAll(fileObjectList);
+
+        return directoryObjectList;
     }
 }
